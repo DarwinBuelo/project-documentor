@@ -7,20 +7,54 @@ if [ ! -f .env ]; then
     cp .env.example .env
 fi
 
-if [ -n "${DB_HOST:-}" ]; then
-    echo "Waiting for database at ${DB_HOST}:${DB_PORT:-3306}..."
+# Map Railway Postgres variables to Laravel DB_* when not explicitly set
+export DB_CONNECTION="${DB_CONNECTION:-pgsql}"
+export DB_HOST="${DB_HOST:-${PGHOST:-}}"
+export DB_PORT="${DB_PORT:-${PGPORT:-5432}}"
+export DB_USERNAME="${DB_USERNAME:-${PGUSER:-postgres}}"
+export DB_PASSWORD="${DB_PASSWORD:-${PGPASSWORD:-}}"
+export DB_DATABASE="${DB_DATABASE:-${PGDATABASE:-railway}}"
+export DB_URL="${DB_URL:-${DATABASE_URL:-}}"
+
+if [ -z "${APP_URL:-}" ] && [ -n "${RAILWAY_PUBLIC_DOMAIN:-}" ]; then
+    export APP_URL="https://${RAILWAY_PUBLIC_DOMAIN}"
+fi
+
+export PORT="${PORT:-80}"
+export LOG_CHANNEL="${LOG_CHANNEL:-stderr}"
+
+envsubst '${PORT}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
+
+if [ -n "${DB_HOST:-}" ] && [ "${DB_HOST}" != "127.0.0.1" ]; then
+    echo "Waiting for database at ${DB_HOST}:${DB_PORT}..."
+    retries=0
+    max_retries=30
     until php -r "
         try {
-            new PDO(
-                'mysql:host=${DB_HOST};port=${DB_PORT:-3306}',
-                '${DB_USERNAME:-root}',
-                '${DB_PASSWORD:-}'
-            );
+            \$connection = getenv('DB_CONNECTION') ?: 'pgsql';
+            \$host = getenv('DB_HOST');
+            \$port = getenv('DB_PORT') ?: '5432';
+            \$database = getenv('DB_DATABASE') ?: 'postgres';
+            \$username = getenv('DB_USERNAME') ?: 'postgres';
+            \$password = getenv('DB_PASSWORD') ?: '';
+
+            if (\$connection === 'pgsql') {
+                \$dsn = \"pgsql:host={\$host};port={\$port};dbname={\$database}\";
+            } else {
+                \$dsn = \"mysql:host={\$host};port={\$port}\";
+            }
+
+            new PDO(\$dsn, \$username, \$password);
             exit(0);
         } catch (Throwable \$e) {
             exit(1);
         }
     " 2>/dev/null; do
+        retries=$((retries + 1))
+        if [ "$retries" -ge "$max_retries" ]; then
+            echo "ERROR: Database not reachable at ${DB_HOST}:${DB_PORT} after ${max_retries} attempts."
+            exit 1
+        fi
         sleep 2
     done
     echo "Database is ready."

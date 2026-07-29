@@ -43,6 +43,7 @@ FROM php:8.3-fpm-bookworm AS production
 RUN apt-get update && apt-get install -y --no-install-recommends \
     nginx \
     supervisor \
+    gettext-base \
     curl \
     git \
     unzip \
@@ -52,9 +53,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libzip-dev \
     libonig-dev \
     libsqlite3-dev \
+    libpq-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" \
         pdo_mysql \
+        pdo_pgsql \
         pdo_sqlite \
         mbstring \
         exif \
@@ -73,7 +76,7 @@ COPY . .
 COPY --from=vendor /app/vendor ./vendor
 COPY --from=frontend /app/public/build ./public/build
 
-COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY docker/nginx/default.conf.template /etc/nginx/conf.d/default.conf.template
 COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
