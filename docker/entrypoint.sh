@@ -16,6 +16,11 @@ export DB_PASSWORD="${DB_PASSWORD:-${PGPASSWORD:-}}"
 export DB_DATABASE="${DB_DATABASE:-${PGDATABASE:-railway}}"
 export DB_URL="${DB_URL:-${DATABASE_URL:-}}"
 
+# Railway Postgres requires SSL
+if [ -n "${RAILWAY_ENVIRONMENT_ID:-}" ] || [ -n "${PGHOST:-}" ] || [ -n "${DB_URL:-}" ]; then
+    export DB_SSLMODE="${DB_SSLMODE:-require}"
+fi
+
 if [ -z "${APP_URL:-}" ] && [ -n "${RAILWAY_PUBLIC_DOMAIN:-}" ]; then
     export APP_URL="https://${RAILWAY_PUBLIC_DOMAIN}"
 fi
@@ -32,86 +37,45 @@ fi
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R ug+rwx storage bootstrap/cache
 
-wait_for_database() {
-    retries=0
-    max_retries=30
-
-    echo "Checking database connection..."
-    until php -r "
-        try {
-            if (\$url = getenv('DB_URL')) {
-                \$parts = parse_url(\$url);
-                if (\$parts === false || !isset(\$parts['host'])) {
-                    exit(1);
-                }
-
-                \$dsn = sprintf(
-                    'pgsql:host=%s;port=%s;dbname=%s',
-                    \$parts['host'],
-                    \$parts['port'] ?? 5432,
-                    ltrim(\$parts['path'] ?? '', '/')
-                );
-
-                new PDO(
-                    \$dsn,
-                    \$parts['user'] ?? 'postgres',
-                    \$parts['pass'] ?? '',
-                    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-                );
-            } else {
-                \$connection = getenv('DB_CONNECTION') ?: 'pgsql';
-                \$host = getenv('DB_HOST');
-                \$port = getenv('DB_PORT') ?: '5432';
-                \$database = getenv('DB_DATABASE') ?: 'postgres';
-                \$username = getenv('DB_USERNAME') ?: 'postgres';
-                \$password = getenv('DB_PASSWORD') ?: '';
-
-                if (!\$host || \$host === '127.0.0.1') {
-                    exit(0);
-                }
-
-                if (\$connection === 'pgsql') {
-                    \$dsn = \"pgsql:host={\$host};port={\$port};dbname={\$database}\";
-                } else {
-                    \$dsn = \"mysql:host={\$host};port={\$port}\";
-                }
-
-                new PDO(\$dsn, \$username, \$password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-            }
-
-            exit(0);
-        } catch (Throwable \$e) {
-            exit(1);
-        }
-    " 2>/dev/null; do
-        retries=$((retries + 1))
-        if [ "$retries" -ge "$max_retries" ]; then
-            return 1
-        fi
-        sleep 2
-    done
-
-    return 0
+log_database_config() {
+    if [ -n "${DB_URL:-}" ]; then
+        echo "Database: using DB_URL (Railway DATABASE_URL)"
+    elif [ -n "${DB_HOST:-}" ] && [ "${DB_HOST}" != "127.0.0.1" ]; then
+        echo "Database: ${DB_CONNECTION}://${DB_HOST}:${DB_PORT}/${DB_DATABASE}"
+    else
+        echo "ERROR: No database configured."
+        echo "  Set DB_URL=\${{Postgres.DATABASE_URL}} in Railway service variables."
+        echo "  Replace 'Postgres' with your Postgres service name."
+    fi
 }
 
 run_initialization() {
-    if ! wait_for_database; then
-        echo "WARNING: Database not reachable yet."
-        return 1
-    fi
+    log_database_config
 
-    echo "Database is ready."
+    attempts=0
+    max_attempts=30
 
-    php artisan migrate --force --no-interaction || {
-        echo "WARNING: migrations failed; check database configuration."
-        return 1
-    }
+    while [ "$attempts" -lt "$max_attempts" ]; do
+        attempts=$((attempts + 1))
+        echo "Running migrations (attempt ${attempts}/${max_attempts})..."
 
-    php artisan config:cache --no-interaction
-    php artisan route:cache --no-interaction
-    php artisan view:cache --no-interaction
+        if php artisan migrate --force --no-interaction; then
+            echo "Migrations complete."
 
-    supervisorctl -c /etc/supervisor/conf.d/supervisord.conf start queue || true
+            php artisan config:cache --no-interaction
+            php artisan route:cache --no-interaction
+            php artisan view:cache --no-interaction
+
+            supervisorctl -c /etc/supervisor/conf.d/supervisord.conf start queue || true
+            return 0
+        fi
+
+        echo "Migration failed, retrying in 10 seconds..."
+        sleep 10
+    done
+
+    echo "ERROR: Could not run migrations after ${max_attempts} attempts."
+    return 1
 }
 
 run_initialization &
