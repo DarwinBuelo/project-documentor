@@ -77,6 +77,15 @@ fi
 export LOG_CHANNEL="${LOG_CHANNEL:-stderr}"
 
 envsubst '${PORT}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
+
+# Railway domains may target port 80 or 8080 — listen on both when they differ
+if [ -n "${RAILWAY_ENVIRONMENT_ID:-}" ] && [ "${PORT}" != "80" ]; then
+    sed -i "/listen \[::\]:${PORT};/a\\
+    listen 0.0.0.0:80;\\
+    listen [::]:80;" /etc/nginx/conf.d/default.conf
+    echo "Nginx also listening on 0.0.0.0:80 (Railway target port fallback)"
+fi
+
 echo "Nginx configured on 0.0.0.0:${PORT}"
 
 if [ -z "${APP_KEY:-}" ] || [ "${APP_KEY}" = "base64:" ]; then
