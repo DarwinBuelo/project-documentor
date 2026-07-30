@@ -80,7 +80,6 @@ COPY docker/nginx/default.conf.template /etc/nginx/conf.d/default.conf.template
 COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
 COPY docker/php/railway-fpm.conf /usr/local/etc/php-fpm.d/zz-railway.conf
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 RUN chmod +x /usr/local/bin/entrypoint.sh \
     && mkdir -p /run /var/www/.postgresql storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
