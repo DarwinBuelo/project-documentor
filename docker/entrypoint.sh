@@ -27,44 +27,38 @@ envsubst '${PORT}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d
 
 if [ -z "${APP_KEY:-}" ] || [ "${APP_KEY}" = "base64:" ]; then
     php artisan key:generate --force --no-interaction
-else
-    grep -q "^APP_KEY=" .env && sed -i "s|^APP_KEY=.*|APP_KEY=${APP_KEY}|" .env || echo "APP_KEY=${APP_KEY}" >> .env
 fi
 
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R ug+rwx storage bootstrap/cache
 
-run_initialization() {
-    wait_for_database() {
-        retries=0
-        max_retries=30
+wait_for_database() {
+    retries=0
+    max_retries=15
 
-        if [ -n "${DB_URL:-}" ]; then
-            echo "Waiting for database via DB_URL..."
-            until php -r "
-                try {
-                    new PDO(getenv('DB_URL'));
-                    exit(0);
-                } catch (Throwable \$e) {
+    echo "Checking database connection..."
+    until php -r "
+        try {
+            if (\$url = getenv('DB_URL')) {
+                \$parts = parse_url(\$url);
+                if (\$parts === false || !isset(\$parts['host'])) {
                     exit(1);
                 }
-            " 2>/dev/null; do
-                retries=$((retries + 1))
-                if [ "$retries" -ge "$max_retries" ]; then
-                    return 1
-                fi
-                sleep 2
-            done
-            return 0
-        fi
 
-        if [ -z "${DB_HOST:-}" ] || [ "${DB_HOST}" = "127.0.0.1" ]; then
-            return 0
-        fi
+                \$dsn = sprintf(
+                    'pgsql:host=%s;port=%s;dbname=%s',
+                    \$parts['host'],
+                    \$parts['port'] ?? 5432,
+                    ltrim(\$parts['path'] ?? '', '/')
+                );
 
-        echo "Waiting for database at ${DB_HOST}:${DB_PORT}..."
-        until php -r "
-            try {
+                new PDO(
+                    \$dsn,
+                    \$parts['user'] ?? 'postgres',
+                    \$parts['pass'] ?? '',
+                    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+                );
+            } else {
                 \$connection = getenv('DB_CONNECTION') ?: 'pgsql';
                 \$host = getenv('DB_HOST');
                 \$port = getenv('DB_PORT') ?: '5432';
@@ -72,41 +66,46 @@ run_initialization() {
                 \$username = getenv('DB_USERNAME') ?: 'postgres';
                 \$password = getenv('DB_PASSWORD') ?: '';
 
+                if (!\$host || \$host === '127.0.0.1') {
+                    exit(0);
+                }
+
                 if (\$connection === 'pgsql') {
                     \$dsn = \"pgsql:host={\$host};port={\$port};dbname={\$database}\";
                 } else {
                     \$dsn = \"mysql:host={\$host};port={\$port}\";
                 }
 
-                new PDO(\$dsn, \$username, \$password);
-                exit(0);
-            } catch (Throwable \$e) {
-                exit(1);
+                new PDO(\$dsn, \$username, \$password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
             }
-        " 2>/dev/null; do
-            retries=$((retries + 1))
-            if [ "$retries" -ge "$max_retries" ]; then
-                return 1
-            fi
-            sleep 2
-        done
 
-        return 0
-    }
+            exit(0);
+        } catch (Throwable \$e) {
+            exit(1);
+        }
+    " 2>/dev/null; do
+        retries=$((retries + 1))
+        if [ "$retries" -ge "$max_retries" ]; then
+            return 1
+        fi
+        sleep 2
+    done
 
-    if ! wait_for_database; then
-        echo "WARNING: Database not reachable yet."
-    else
-        echo "Database is ready."
-    fi
-
-    php artisan migrate --force --no-interaction || echo "WARNING: migrations failed; check database configuration."
-
-    php artisan config:cache --no-interaction
-    php artisan route:cache --no-interaction
-    php artisan view:cache --no-interaction
+    return 0
 }
 
-run_initialization &
+if ! wait_for_database; then
+    echo "ERROR: Database not reachable. Check DB_URL or DB_* variables."
+    exit 1
+fi
+
+echo "Database is ready."
+
+php artisan migrate --force --no-interaction
+
+php artisan config:cache --no-interaction
+php artisan route:cache --no-interaction
+php artisan view:cache --no-interaction
+
 echo "Starting php-fpm, nginx on port ${PORT}, and queue worker..."
 exec "$@"
