@@ -20,17 +20,65 @@ if [ -z "${APP_URL:-}" ] && [ -n "${RAILWAY_PUBLIC_DOMAIN:-}" ]; then
     export APP_URL="https://${RAILWAY_PUBLIC_DOMAIN}"
 fi
 
+export PORT="${PORT:-80}"
 export LOG_CHANNEL="${LOG_CHANNEL:-stderr}"
 
-wait_for_database() {
-    retries=0
-    max_retries=30
+envsubst '${PORT}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
 
-    if [ -n "${DB_URL:-}" ]; then
-        echo "Waiting for database via DB_URL..."
+if [ -z "${APP_KEY:-}" ] || [ "${APP_KEY}" = "base64:" ]; then
+    php artisan key:generate --force --no-interaction
+else
+    grep -q "^APP_KEY=" .env && sed -i "s|^APP_KEY=.*|APP_KEY=${APP_KEY}|" .env || echo "APP_KEY=${APP_KEY}" >> .env
+fi
+
+chown -R www-data:www-data storage bootstrap/cache
+chmod -R ug+rwx storage bootstrap/cache
+
+run_initialization() {
+    wait_for_database() {
+        retries=0
+        max_retries=30
+
+        if [ -n "${DB_URL:-}" ]; then
+            echo "Waiting for database via DB_URL..."
+            until php -r "
+                try {
+                    new PDO(getenv('DB_URL'));
+                    exit(0);
+                } catch (Throwable \$e) {
+                    exit(1);
+                }
+            " 2>/dev/null; do
+                retries=$((retries + 1))
+                if [ "$retries" -ge "$max_retries" ]; then
+                    return 1
+                fi
+                sleep 2
+            done
+            return 0
+        fi
+
+        if [ -z "${DB_HOST:-}" ] || [ "${DB_HOST}" = "127.0.0.1" ]; then
+            return 0
+        fi
+
+        echo "Waiting for database at ${DB_HOST}:${DB_PORT}..."
         until php -r "
             try {
-                new PDO(getenv('DB_URL'));
+                \$connection = getenv('DB_CONNECTION') ?: 'pgsql';
+                \$host = getenv('DB_HOST');
+                \$port = getenv('DB_PORT') ?: '5432';
+                \$database = getenv('DB_DATABASE') ?: 'postgres';
+                \$username = getenv('DB_USERNAME') ?: 'postgres';
+                \$password = getenv('DB_PASSWORD') ?: '';
+
+                if (\$connection === 'pgsql') {
+                    \$dsn = \"pgsql:host={\$host};port={\$port};dbname={\$database}\";
+                } else {
+                    \$dsn = \"mysql:host={\$host};port={\$port}\";
+                }
+
+                new PDO(\$dsn, \$username, \$password);
                 exit(0);
             } catch (Throwable \$e) {
                 exit(1);
@@ -42,65 +90,23 @@ wait_for_database() {
             fi
             sleep 2
         done
+
         return 0
+    }
+
+    if ! wait_for_database; then
+        echo "WARNING: Database not reachable yet."
+    else
+        echo "Database is ready."
     fi
 
-    if [ -z "${DB_HOST:-}" ] || [ "${DB_HOST}" = "127.0.0.1" ]; then
-        return 0
-    fi
+    php artisan migrate --force --no-interaction || echo "WARNING: migrations failed; check database configuration."
 
-    echo "Waiting for database at ${DB_HOST}:${DB_PORT}..."
-    until php -r "
-        try {
-            \$connection = getenv('DB_CONNECTION') ?: 'pgsql';
-            \$host = getenv('DB_HOST');
-            \$port = getenv('DB_PORT') ?: '5432';
-            \$database = getenv('DB_DATABASE') ?: 'postgres';
-            \$username = getenv('DB_USERNAME') ?: 'postgres';
-            \$password = getenv('DB_PASSWORD') ?: '';
-
-            if (\$connection === 'pgsql') {
-                \$dsn = \"pgsql:host={\$host};port={\$port};dbname={\$database}\";
-            } else {
-                \$dsn = \"mysql:host={\$host};port={\$port}\";
-            }
-
-            new PDO(\$dsn, \$username, \$password);
-            exit(0);
-        } catch (Throwable \$e) {
-            exit(1);
-        }
-    " 2>/dev/null; do
-        retries=$((retries + 1))
-        if [ "$retries" -ge "$max_retries" ]; then
-            return 1
-        fi
-        sleep 2
-    done
-
-    return 0
+    php artisan config:cache --no-interaction
+    php artisan route:cache --no-interaction
+    php artisan view:cache --no-interaction
 }
 
-if ! wait_for_database; then
-    echo "WARNING: Database not reachable yet. Starting web server anyway."
-else
-    echo "Database is ready."
-fi
-
-if [ -z "${APP_KEY:-}" ] || [ "${APP_KEY}" = "base64:" ]; then
-    php artisan key:generate --force --no-interaction
-else
-    grep -q "^APP_KEY=" .env && sed -i "s|^APP_KEY=.*|APP_KEY=${APP_KEY}|" .env || echo "APP_KEY=${APP_KEY}" >> .env
-fi
-
-php artisan migrate --force --no-interaction || echo "WARNING: migrations failed; check database configuration."
-
-php artisan config:cache --no-interaction
-php artisan route:cache --no-interaction
-php artisan view:cache --no-interaction
-
-chown -R www-data:www-data storage bootstrap/cache
-chmod -R ug+rwx storage bootstrap/cache
-
-echo "Starting php-fpm, nginx on port 80, and queue worker..."
+run_initialization &
+echo "Starting php-fpm, nginx on port ${PORT}, and queue worker..."
 exec "$@"
