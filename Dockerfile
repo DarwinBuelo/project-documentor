@@ -81,8 +81,7 @@ COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
 COPY docker/php/railway-fpm.conf /usr/local/etc/php-fpm.d/zz-railway.conf
 
-RUN chmod +x /usr/local/bin/entrypoint.sh \
-    && mkdir -p /run /var/www/.postgresql storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
+RUN mkdir -p /run /var/www/.postgresql storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
     && chown -R www-data:www-data /var/www storage bootstrap/cache \
     && chmod 700 /var/www/.postgresql
 
