@@ -34,7 +34,7 @@ chmod -R ug+rwx storage bootstrap/cache
 
 wait_for_database() {
     retries=0
-    max_retries=15
+    max_retries=30
 
     echo "Checking database connection..."
     until php -r "
@@ -94,18 +94,27 @@ wait_for_database() {
     return 0
 }
 
-if ! wait_for_database; then
-    echo "ERROR: Database not reachable. Check DB_URL or DB_* variables."
-    exit 1
-fi
+run_initialization() {
+    if ! wait_for_database; then
+        echo "WARNING: Database not reachable yet."
+        return 1
+    fi
 
-echo "Database is ready."
+    echo "Database is ready."
 
-php artisan migrate --force --no-interaction
+    php artisan migrate --force --no-interaction || {
+        echo "WARNING: migrations failed; check database configuration."
+        return 1
+    }
 
-php artisan config:cache --no-interaction
-php artisan route:cache --no-interaction
-php artisan view:cache --no-interaction
+    php artisan config:cache --no-interaction
+    php artisan route:cache --no-interaction
+    php artisan view:cache --no-interaction
 
-echo "Starting php-fpm, nginx on port ${PORT}, and queue worker..."
+    supervisorctl -c /etc/supervisor/conf.d/supervisord.conf start queue || true
+}
+
+run_initialization &
+
+echo "Starting php-fpm and nginx on port ${PORT}..."
 exec "$@"
