@@ -76,6 +76,11 @@ fi
 
 export LOG_CHANNEL="${LOG_CHANNEL:-stderr}"
 
+# Prevent libpq from looking for SSL client certs in /root when running as www-data
+export PGSSLCERT=""
+export PGSSLKEY=""
+export PGSSLROOTCERT=""
+
 envsubst '${PORT}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
 
 # Railway domains may target port 80 or 8080 — listen on both when they differ
