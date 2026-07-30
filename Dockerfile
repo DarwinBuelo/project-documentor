@@ -43,7 +43,6 @@ FROM php:8.3-fpm-bookworm AS production
 RUN apt-get update && apt-get install -y --no-install-recommends \
     nginx \
     supervisor \
-    gettext-base \
     curl \
     git \
     unzip \
@@ -76,17 +75,15 @@ COPY . .
 COPY --from=vendor /app/vendor ./vendor
 COPY --from=frontend /app/public/build ./public/build
 
-COPY docker/nginx/default.conf.template /etc/nginx/conf.d/default.conf.template
+COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
 COPY docker/php/railway-fpm.conf /usr/local/etc/php-fpm.d/zz-railway.conf
 
 RUN mkdir -p /run /var/www/.postgresql storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
-    && chown -R www-data:www-data /var/www storage bootstrap/cache \
+    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod 700 /var/www/.postgresql
 
 EXPOSE 8080
-
-# Railway injects $PORT at runtime (usually 8080). Do not hardcode PORT=80.
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
