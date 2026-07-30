@@ -20,15 +20,36 @@ if [ -z "${APP_URL:-}" ] && [ -n "${RAILWAY_PUBLIC_DOMAIN:-}" ]; then
     export APP_URL="https://${RAILWAY_PUBLIC_DOMAIN}"
 fi
 
-export PORT="${PORT:-80}"
 export LOG_CHANNEL="${LOG_CHANNEL:-stderr}"
 
-envsubst '${PORT}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
-
-if [ -n "${DB_HOST:-}" ] && [ "${DB_HOST}" != "127.0.0.1" ]; then
-    echo "Waiting for database at ${DB_HOST}:${DB_PORT}..."
+wait_for_database() {
     retries=0
     max_retries=30
+
+    if [ -n "${DB_URL:-}" ]; then
+        echo "Waiting for database via DB_URL..."
+        until php -r "
+            try {
+                new PDO(getenv('DB_URL'));
+                exit(0);
+            } catch (Throwable \$e) {
+                exit(1);
+            }
+        " 2>/dev/null; do
+            retries=$((retries + 1))
+            if [ "$retries" -ge "$max_retries" ]; then
+                return 1
+            fi
+            sleep 2
+        done
+        return 0
+    fi
+
+    if [ -z "${DB_HOST:-}" ] || [ "${DB_HOST}" = "127.0.0.1" ]; then
+        return 0
+    fi
+
+    echo "Waiting for database at ${DB_HOST}:${DB_PORT}..."
     until php -r "
         try {
             \$connection = getenv('DB_CONNECTION') ?: 'pgsql';
@@ -52,11 +73,17 @@ if [ -n "${DB_HOST:-}" ] && [ "${DB_HOST}" != "127.0.0.1" ]; then
     " 2>/dev/null; do
         retries=$((retries + 1))
         if [ "$retries" -ge "$max_retries" ]; then
-            echo "ERROR: Database not reachable at ${DB_HOST}:${DB_PORT} after ${max_retries} attempts."
-            exit 1
+            return 1
         fi
         sleep 2
     done
+
+    return 0
+}
+
+if ! wait_for_database; then
+    echo "WARNING: Database not reachable yet. Starting web server anyway."
+else
     echo "Database is ready."
 fi
 
@@ -66,7 +93,7 @@ else
     grep -q "^APP_KEY=" .env && sed -i "s|^APP_KEY=.*|APP_KEY=${APP_KEY}|" .env || echo "APP_KEY=${APP_KEY}" >> .env
 fi
 
-php artisan migrate --force --no-interaction
+php artisan migrate --force --no-interaction || echo "WARNING: migrations failed; check database configuration."
 
 php artisan config:cache --no-interaction
 php artisan route:cache --no-interaction
@@ -75,4 +102,5 @@ php artisan view:cache --no-interaction
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R ug+rwx storage bootstrap/cache
 
+echo "Starting php-fpm, nginx on port 80, and queue worker..."
 exec "$@"

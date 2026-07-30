@@ -43,7 +43,6 @@ FROM php:8.3-fpm-bookworm AS production
 RUN apt-get update && apt-get install -y --no-install-recommends \
     nginx \
     supervisor \
-    gettext-base \
     curl \
     git \
     unzip \
@@ -76,7 +75,7 @@ COPY . .
 COPY --from=vendor /app/vendor ./vendor
 COPY --from=frontend /app/public/build ./public/build
 
-COPY docker/nginx/default.conf.template /etc/nginx/conf.d/default.conf.template
+COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
