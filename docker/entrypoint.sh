@@ -62,10 +62,22 @@ if [ -z "${APP_URL:-}" ] && [ -n "${RAILWAY_PUBLIC_DOMAIN:-}" ]; then
     export APP_URL="https://${RAILWAY_PUBLIC_DOMAIN}"
 fi
 
-export PORT="${PORT:-80}"
+# Railway injects PORT automatically — do NOT hardcode PORT=80 in Railway variables.
+# The domain "target port" in Networking settings must match this value.
+if [ -n "${RAILWAY_ENVIRONMENT_ID:-}" ] || [ -n "${RAILWAY_PUBLIC_DOMAIN:-}" ]; then
+    if [ -z "${PORT:-}" ]; then
+        echo "ERROR: PORT is not set. Remove any manual PORT variable and let Railway inject it."
+        exit 1
+    fi
+    echo "Railway PORT=${PORT} — ensure Networking target port is also ${PORT}."
+else
+    export PORT="${PORT:-80}"
+fi
+
 export LOG_CHANNEL="${LOG_CHANNEL:-stderr}"
 
 envsubst '${PORT}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
+echo "Nginx configured on 0.0.0.0:${PORT}"
 
 if [ -z "${APP_KEY:-}" ] || [ "${APP_KEY}" = "base64:" ]; then
     php artisan key:generate --force --no-interaction
