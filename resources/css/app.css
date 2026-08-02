@@ -1,9 +1,229 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant light (&:where(.light, .light *));
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
 
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-primary: #6366f1;
+    --color-primary-dark: #818cf8;
+    --color-primary-light: var(--app-primary-light);
+    --color-primary-muted: #a5b4fc;
+    --color-surface: var(--app-surface);
+    --color-background: var(--app-background);
+    --color-foreground: var(--app-foreground);
+    --color-muted: var(--app-muted);
+    --color-muted-foreground: var(--app-muted-foreground);
+    --color-border: var(--app-border);
+    --color-border-subtle: var(--app-border-subtle);
+    --color-accent: #22d3ee;
+    --color-header: var(--app-header);
+    --color-hero-from: var(--app-hero-from);
+    --color-hero-via: var(--app-hero-via);
+    --color-hero-to: var(--app-hero-to);
+    --color-code-bg: var(--app-code-bg);
+    --color-code-text: var(--app-code-text);
+    --color-pre-bg: var(--app-pre-bg);
+    --color-pre-text: var(--app-pre-text);
+    --color-shadow: var(--app-shadow);
+}
+
+html.dark {
+    color-scheme: dark;
+
+    --app-background: #070b14;
+    --app-surface: #0f1629;
+    --app-header: rgb(15 22 41 / 0.82);
+    --app-foreground: #f1f5f9;
+    --app-muted: #94a3b8;
+    --app-muted-foreground: #64748b;
+    --app-border: #1e293b;
+    --app-border-subtle: #162032;
+    --app-primary-light: rgb(99 102 241 / 0.14);
+    --app-hero-from: rgb(99 102 241 / 0.18);
+    --app-hero-via: #0f1629;
+    --app-hero-to: #070b14;
+    --app-code-bg: rgb(99 102 241 / 0.12);
+    --app-code-text: #c7d2fe;
+    --app-pre-bg: #020617;
+    --app-pre-text: #e2e8f0;
+    --app-shadow: rgb(2 6 23 / 0.45);
+}
+
+html.light {
+    color-scheme: light;
+
+    --app-background: #f8fafc;
+    --app-surface: #ffffff;
+    --app-header: rgb(255 255 255 / 0.82);
+    --app-foreground: #0f172a;
+    --app-muted: #64748b;
+    --app-muted-foreground: #94a3b8;
+    --app-border: #e2e8f0;
+    --app-border-subtle: #f1f5f9;
+    --app-primary-light: #eef2ff;
+    --app-hero-from: #eef2ff;
+    --app-hero-via: #ffffff;
+    --app-hero-to: #f8fafc;
+    --app-code-bg: #eef2ff;
+    --app-code-text: #4338ca;
+    --app-pre-bg: #0f172a;
+    --app-pre-text: #f8fafc;
+    --app-shadow: rgb(15 23 42 / 0.08);
+}
+
+@layer base {
+    html {
+        @apply h-full;
+    }
+
+    body {
+        @apply min-h-full bg-background text-sm leading-6 text-foreground antialiased transition-colors duration-300;
+    }
+}
+
+@layer components {
+    .brand-mark {
+        @apply flex size-8 items-center justify-center rounded-lg bg-primary text-xs font-bold text-white shadow-sm shadow-primary/30;
+    }
+
+    .nav-link {
+        @apply rounded-md px-2.5 py-1.5 text-xs font-medium text-muted transition hover:bg-primary-light hover:text-primary-dark;
+    }
+
+    .nav-link-active {
+        @apply bg-primary-light text-primary-dark;
+    }
+
+    .theme-toggle {
+        @apply inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs font-medium text-muted transition hover:border-primary/30 hover:text-foreground;
+    }
+
+    .page-eyebrow {
+        @apply text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-muted;
+    }
+
+    .surface-card {
+        @apply rounded-lg border border-border bg-surface shadow-sm;
+        box-shadow: 0 1px 2px 0 var(--app-shadow);
+    }
+
+    .project-card {
+        @apply relative overflow-hidden rounded-xl border border-border bg-surface p-4 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-primary/30;
+        box-shadow: 0 1px 2px 0 var(--app-shadow);
+    }
+
+    .project-card:hover {
+        box-shadow: 0 16px 40px -20px rgb(99 102 241 / 0.35);
+    }
+
+    .project-card::before {
+        content: '';
+        @apply absolute inset-y-0 left-0 w-1 scale-y-0 bg-primary transition duration-300;
+    }
+
+    .group:hover .project-card::before {
+        @apply scale-y-100;
+    }
+
+    .sidebar-link {
+        @apply flex items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-medium leading-5 text-muted transition hover:bg-primary-light hover:text-primary-dark;
+    }
+
+    .sidebar-link-active {
+        @apply bg-primary text-white shadow-sm shadow-primary/30 hover:bg-primary hover:text-white;
+    }
+
+    .sidebar-link-active .sidebar-step {
+        @apply bg-white/20 text-white;
+    }
+
+    .sidebar-step {
+        @apply flex size-5 shrink-0 items-center justify-center rounded bg-primary-light text-[10px] font-bold text-primary;
+    }
+
+    .empty-state {
+        @apply flex flex-col items-center rounded-xl border border-border bg-surface px-6 py-10 text-center text-sm shadow-sm;
+        box-shadow: 0 1px 2px 0 var(--app-shadow);
+    }
+
+    .page-container {
+        @apply mx-auto w-full max-w-7xl px-5 lg:px-8;
+    }
+
+    .doc-content {
+        @apply text-sm leading-6;
+    }
+
+    .doc-content h2 {
+        @apply mt-8 mb-3 border-b border-border-subtle pb-2 text-base font-semibold tracking-tight text-foreground first:mt-0;
+    }
+
+    .doc-content h3 {
+        @apply mt-6 mb-2 text-sm font-semibold text-foreground;
+    }
+
+    .doc-content p {
+        @apply mb-3 leading-6 text-muted;
+    }
+
+    .doc-content ul,
+    .doc-content ol {
+        @apply mb-4 ml-5 space-y-1.5 text-muted;
+    }
+
+    .doc-content ul {
+        @apply list-disc marker:text-primary-muted;
+    }
+
+    .doc-content ol {
+        @apply list-decimal marker:font-semibold marker:text-primary;
+    }
+
+    .doc-content strong {
+        @apply font-semibold text-foreground;
+    }
+
+    .doc-content code {
+        @apply rounded border border-border px-1 py-0.5 text-[0.8125rem] font-medium;
+        background: var(--app-code-bg);
+        color: var(--app-code-text);
+    }
+
+    .doc-content pre {
+        @apply mb-4 overflow-x-auto rounded-lg border border-border p-4 text-[13px] leading-5 shadow-inner;
+        background: var(--app-pre-bg);
+        color: var(--app-pre-text);
+    }
+
+    .doc-content pre code {
+        @apply border-0 bg-transparent p-0 font-normal text-inherit;
+    }
+
+    .doc-content table {
+        @apply mb-4 w-full overflow-hidden rounded-lg border border-border text-[13px];
+    }
+
+    .doc-content th,
+    .doc-content td {
+        @apply border-b border-border px-3 py-2 text-left;
+    }
+
+    .doc-content th {
+        @apply bg-primary-light text-[11px] font-semibold uppercase tracking-wider text-primary-dark;
+    }
+
+    .doc-content tr:last-child td {
+        @apply border-b-0;
+    }
+
+    .doc-content a {
+        @apply font-medium text-primary underline decoration-primary/30 underline-offset-4 transition hover:text-primary-dark hover:decoration-primary;
+    }
 }
