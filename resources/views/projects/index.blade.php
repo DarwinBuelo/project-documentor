@@ -7,7 +7,7 @@
         <div class="page-container py-8 lg:py-10">
             <p class="page-eyebrow">Documentation</p>
             <h1 class="mt-2 max-w-2xl text-xl font-semibold tracking-tight text-foreground lg:text-2xl">
-                Every project deserves clear, beautiful docs.
+                This is a test
             </h1>
             <p class="mt-3 max-w-xl text-sm leading-6 text-muted">
                 Browse guides, setup notes, and reference pages — organized by project and designed to be easy to read.
