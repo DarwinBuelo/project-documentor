@@ -10,7 +10,7 @@
                 This is a test
             </h1>
             <p class="mt-3 max-w-xl text-sm leading-6 text-muted">
-                ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt
+                this is a test
             </p>
         </div>
     </section>
