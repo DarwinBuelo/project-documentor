@@ -10,7 +10,7 @@
                 This is a test
             </h1>
             <p class="mt-3 max-w-xl text-sm leading-6 text-muted">
-                Browse guides, setup notes, and reference pages — organized by project and designed to be easy to read.
+                ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt
             </p>
         </div>
     </section>
