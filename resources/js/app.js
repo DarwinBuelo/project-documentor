@@ -1,7 +1,12 @@
 (function () {
-    const theme = localStorage.getItem('theme') ?? 'dark';
+    const site = window.__SITE_THEME__ ?? { mode: 'dark', palette: 'dracula-soft' };
+    const mode = localStorage.getItem('theme') ?? site.mode;
     document.documentElement.classList.remove('dark', 'light');
-    document.documentElement.classList.add(theme);
+    document.documentElement.classList.add(mode === 'light' ? 'light' : 'dark');
+
+    if (site.palette) {
+        document.documentElement.dataset.palette = site.palette;
+    }
 })();
 
 function setTheme(theme) {

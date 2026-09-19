@@ -4,13 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', config('app.name'))</title>
-    <script>
-        (function () {
-            const theme = localStorage.getItem('theme') ?? 'dark';
-            document.documentElement.classList.remove('dark', 'light');
-            document.documentElement.classList.add(theme);
-        })();
-    </script>
+    @include('partials.theme-head')
     @fonts
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>

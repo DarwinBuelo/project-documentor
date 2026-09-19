@@ -11,10 +11,10 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 
-    --color-primary: #6366f1;
-    --color-primary-dark: #818cf8;
+    --color-primary: var(--app-primary);
+    --color-primary-dark: var(--app-primary-dark);
     --color-primary-light: var(--app-primary-light);
-    --color-primary-muted: #a5b4fc;
+    --color-primary-muted: var(--app-primary-muted);
     --color-surface: var(--app-surface);
     --color-background: var(--app-background);
     --color-foreground: var(--app-foreground);
@@ -22,7 +22,7 @@
     --color-muted-foreground: var(--app-muted-foreground);
     --color-border: var(--app-border);
     --color-border-subtle: var(--app-border-subtle);
-    --color-accent: #22d3ee;
+    --color-accent: var(--app-accent);
     --color-header: var(--app-header);
     --color-hero-from: var(--app-hero-from);
     --color-hero-via: var(--app-hero-via);
@@ -32,55 +32,47 @@
     --color-pre-bg: var(--app-pre-bg);
     --color-pre-text: var(--app-pre-text);
     --color-shadow: var(--app-shadow);
-    --color-danger: #ef4444;
-    --color-danger-dark: #f87171;
+    --color-danger: var(--app-danger);
+    --color-danger-dark: var(--app-danger-dark);
     --color-danger-light: var(--app-danger-light);
 }
 
 html.dark {
     color-scheme: dark;
-
-    --app-background: #070b14;
-    --app-surface: #0f1629;
-    --app-header: rgb(15 22 41 / 0.82);
-    --app-foreground: #f1f5f9;
-    --app-muted: #94a3b8;
-    --app-muted-foreground: #64748b;
-    --app-border: #1e293b;
-    --app-border-subtle: #162032;
-    --app-primary-light: rgb(99 102 241 / 0.14);
-    --app-danger-light: rgb(239 68 68 / 0.14);
-    --app-hero-from: rgb(99 102 241 / 0.18);
-    --app-hero-via: #0f1629;
-    --app-hero-to: #070b14;
-    --app-code-bg: rgb(99 102 241 / 0.12);
-    --app-code-text: #c7d2fe;
-    --app-pre-bg: #020617;
-    --app-pre-text: #e2e8f0;
-    --app-shadow: rgb(2 6 23 / 0.45);
 }
 
 html.light {
     color-scheme: light;
+}
 
-    --app-background: #f8fafc;
-    --app-surface: #ffffff;
-    --app-header: rgb(255 255 255 / 0.82);
-    --app-foreground: #0f172a;
-    --app-muted: #64748b;
-    --app-muted-foreground: #94a3b8;
-    --app-border: #e2e8f0;
-    --app-border-subtle: #f1f5f9;
-    --app-primary-light: #eef2ff;
-    --app-danger-light: #fef2f2;
-    --app-hero-from: #eef2ff;
-    --app-hero-via: #ffffff;
-    --app-hero-to: #f8fafc;
-    --app-code-bg: #eef2ff;
-    --app-code-text: #4338ca;
-    --app-pre-bg: #0f172a;
-    --app-pre-text: #f8fafc;
-    --app-shadow: rgb(15 23 42 / 0.08);
+/* Fallback palette (Dracula Soft) before dynamic theme styles load */
+:root {
+    --app-background: #282a36;
+    --app-surface: #21222c;
+    --app-header: rgb(33 34 44 / 0.92);
+    --app-foreground: #f6f6f4;
+    --app-muted: #7b7f8b;
+    --app-muted-foreground: #6272a4;
+    --app-border: #44475a;
+    --app-border-subtle: #343746;
+    --app-primary: #bf9eee;
+    --app-primary-dark: #d6b4f7;
+    --app-primary-muted: #97e1f1;
+    --app-primary-light: rgb(191 158 238 / 0.16);
+    --app-accent: #97e1f1;
+    --app-danger: #ee6666;
+    --app-danger-dark: #f07c7c;
+    --app-danger-light: rgb(238 102 102 / 0.14);
+    --app-hero-from: rgb(191 158 238 / 0.14);
+    --app-hero-via: #282a36;
+    --app-hero-to: #21222c;
+    --app-code-bg: rgb(191 158 238 / 0.12);
+    --app-code-text: #d6b4f7;
+    --app-pre-bg: #191a21;
+    --app-pre-text: #f6f6f4;
+    --app-shadow: rgb(25 26 33 / 0.55);
+    --app-brand-text: #282a36;
+    --app-card-glow: rgb(191 158 238 / 0.35);
 }
 
 @layer base {
@@ -95,7 +87,8 @@ html.light {
 
 @layer components {
     .brand-mark {
-        @apply flex size-8 items-center justify-center rounded-lg bg-primary text-xs font-bold text-white shadow-sm shadow-primary/30;
+        @apply flex size-8 items-center justify-center rounded-lg bg-primary text-xs font-bold shadow-sm shadow-primary/30;
+        color: var(--app-brand-text);
     }
 
     .nav-link {
@@ -125,7 +118,7 @@ html.light {
     }
 
     .project-card:hover {
-        box-shadow: 0 16px 40px -20px rgb(99 102 241 / 0.35);
+        box-shadow: 0 16px 40px -20px var(--app-card-glow);
     }
 
     .project-card::before {
@@ -142,11 +135,17 @@ html.light {
     }
 
     .sidebar-link-active {
-        @apply bg-primary text-white shadow-sm shadow-primary/30 hover:bg-primary hover:text-white;
+        @apply bg-primary shadow-sm shadow-primary/30 hover:bg-primary;
+        color: var(--app-brand-text);
+    }
+
+    .sidebar-link-active:hover {
+        color: var(--app-brand-text);
     }
 
     .sidebar-link-active .sidebar-step {
-        @apply bg-white/20 text-white;
+        background: rgb(255 255 255 / 0.2);
+        color: var(--app-brand-text);
     }
 
     .sidebar-step {
@@ -257,7 +256,8 @@ html.light {
     }
 
     .btn-primary {
-        @apply bg-primary text-white shadow-sm shadow-primary/30 hover:bg-primary-dark;
+        @apply bg-primary shadow-sm shadow-primary/30 hover:bg-primary-dark;
+        color: var(--app-brand-text);
     }
 
     .btn-secondary {
@@ -310,5 +310,69 @@ html.light {
 
     .status-badge-draft {
         @apply bg-background text-muted;
+    }
+
+    .appearance-option {
+        @apply inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-muted transition hover:border-primary/30;
+    }
+
+    .appearance-option-active {
+        @apply border-primary bg-primary-light text-primary-dark;
+    }
+
+    .appearance-option-icon {
+        @apply text-sm leading-none;
+    }
+
+    .theme-card {
+        @apply cursor-pointer overflow-hidden rounded-lg border border-border bg-surface transition hover:border-primary/30;
+    }
+
+    .theme-card-active {
+        @apply border-primary ring-2 ring-primary/20;
+    }
+
+    .theme-card-preview {
+        @apply relative h-16 overflow-hidden border-b border-border;
+    }
+
+    .theme-card-bar {
+        @apply absolute inset-x-0 top-0 h-3;
+    }
+
+    .theme-card-swatches {
+        @apply absolute bottom-2 left-2 flex gap-1.5;
+    }
+
+    .theme-card-swatches span {
+        @apply size-4 rounded-full;
+    }
+
+    .theme-card-body {
+        @apply flex flex-col gap-0.5 p-3;
+    }
+
+    .theme-card-title {
+        @apply text-xs font-semibold text-foreground;
+    }
+
+    .theme-card-description {
+        @apply text-[11px] leading-4 text-muted;
+    }
+
+    .project-search {
+        @apply relative;
+    }
+
+    .project-search-icon {
+        @apply pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted;
+    }
+
+    .project-search-input {
+        @apply pl-9 pr-8;
+    }
+
+    .project-search-clear {
+        @apply absolute top-1/2 right-3 -translate-y-1/2 text-lg leading-none text-muted transition hover:text-foreground;
     }
 }

@@ -2,42 +2,67 @@
 
 @section('title', 'Projects — '.config('app.name'))
 
-@section('hero')
-    <section class="border-b border-border bg-gradient-to-br from-hero-from via-hero-via to-hero-to">
-        <div class="page-container py-8 lg:py-10">
-            <p class="page-eyebrow">Documentation</p>
-            <h1 class="mt-2 max-w-2xl text-xl font-semibold tracking-tight text-foreground lg:text-2xl">
-                This is a test
-            </h1>
-            <p class="mt-3 max-w-xl text-sm leading-6 text-muted">
-                this is a test
+@section('content')
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <h1 class="text-base font-semibold tracking-tight text-foreground">All projects</h1>
+            <p class="mt-0.5 text-xs text-muted">
+                @if ($search !== '')
+                    {{ $projects->count() }} {{ Str::plural('result', $projects->count()) }} for &ldquo;{{ $search }}&rdquo;
+                @else
+                    {{ $projects->count() }} {{ Str::plural('project', $projects->count()) }} available
+                @endif
             </p>
         </div>
-    </section>
-@endsection
 
-@section('content')
-    <div class="mb-6 flex items-end justify-between gap-4">
-        <div>
-            <h2 class="text-base font-semibold tracking-tight text-foreground">All projects</h2>
-            <p class="mt-0.5 text-xs text-muted">{{ $projects->count() }} {{ Str::plural('project', $projects->count()) }} available</p>
-        </div>
+        <form method="GET" action="{{ route('projects.index') }}" class="w-full sm:max-w-sm" role="search">
+            <label for="project-search" class="sr-only">Search projects</label>
+            <div class="project-search">
+                <svg xmlns="http://www.w3.org/2000/svg" class="project-search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
+                <input
+                    type="search"
+                    id="project-search"
+                    name="search"
+                    value="{{ $search }}"
+                    placeholder="Search projects..."
+                    class="form-input project-search-input"
+                    autocomplete="off"
+                >
+                @if ($search !== '')
+                    <a href="{{ route('projects.index') }}" class="project-search-clear" aria-label="Clear search">
+                        &times;
+                    </a>
+                @endif
+            </div>
+        </form>
     </div>
 
     @if ($projects->isEmpty())
         <div class="empty-state">
-            <div class="mb-3 flex size-10 items-center justify-center rounded-lg bg-primary-light text-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
-                </svg>
-            </div>
-            <h3 class="text-sm font-semibold text-foreground">No projects yet</h3>
-            <p class="mt-1.5 max-w-md text-xs leading-5 text-muted">
-                Seed the example project to preview the documentation experience.
-            </p>
-            <code class="mt-4 rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-primary-dark">
-                php artisan db:seed --class=ExampleProjectSeeder
-            </code>
+            @if ($search !== '')
+                <h3 class="text-sm font-semibold text-foreground">No matching projects</h3>
+                <p class="mt-1.5 max-w-md text-xs leading-5 text-muted">
+                    Nothing matched &ldquo;{{ $search }}&rdquo;. Try a different name or keyword.
+                </p>
+                <a href="{{ route('projects.index') }}" class="btn btn-secondary mt-4">
+                    Clear search
+                </a>
+            @else
+                <div class="mb-3 flex size-10 items-center justify-center rounded-lg bg-primary-light text-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                    </svg>
+                </div>
+                <h3 class="text-sm font-semibold text-foreground">No projects yet</h3>
+                <p class="mt-1.5 max-w-md text-xs leading-5 text-muted">
+                    Seed the example project to preview the documentation experience.
+                </p>
+                <code class="mt-4 rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-primary-dark">
+                    php artisan db:seed --class=ExampleProjectSeeder
+                </code>
+            @endif
         </div>
     @else
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

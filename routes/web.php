@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\DocumentationPageController as AdminDocumentationPageController;
 use App\Http\Controllers\Admin\ProjectController as AdminProjectController;
+use App\Http\Controllers\Admin\ThemeController as AdminThemeController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DocumentationPageController;
 use App\Http\Controllers\ProjectController;
@@ -18,6 +19,9 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
+
+    Route::get('appearance', [AdminThemeController::class, 'edit'])->name('appearance.edit');
+    Route::put('appearance', [AdminThemeController::class, 'update'])->name('appearance.update');
 
     Route::resource('projects', AdminProjectController::class)->except(['show']);
 

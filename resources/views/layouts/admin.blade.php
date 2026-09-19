@@ -4,13 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Admin — '.config('app.name'))</title>
-    <script>
-        (function () {
-            const theme = localStorage.getItem('theme') ?? 'dark';
-            document.documentElement.classList.remove('dark', 'light');
-            document.documentElement.classList.add(theme);
-        })();
-    </script>
+    @include('partials.theme-head')
     @fonts
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -36,6 +30,16 @@
                         </svg>
                         <span data-theme-label class="hidden sm:inline">Light mode</span>
                     </button>
+
+                    <a
+                        href="{{ route('admin.appearance.edit') }}"
+                        @class([
+                            'nav-link',
+                            'nav-link-active' => request()->routeIs('admin.appearance.*'),
+                        ])
+                    >
+                        Appearance
+                    </a>
 
                     <a href="{{ route('projects.index') }}" class="nav-link">
                         View site
