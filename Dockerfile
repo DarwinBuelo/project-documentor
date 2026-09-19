@@ -19,7 +19,17 @@
     # ============================================
     # Stage 2: Install PHP dependencies
     # ============================================
-    FROM composer:2 AS vendor
+    FROM php:8.5-cli-bookworm AS vendor
+
+    COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+    RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        unzip \
+        libzip-dev \
+        && docker-php-ext-install zip \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/*
 
     WORKDIR /app
 
@@ -38,7 +48,7 @@
     # ============================================
     # Stage 3: Production image
     # ============================================
-    FROM php:8.3-fpm-bookworm AS production
+    FROM php:8.5-fpm-bookworm AS production
 
     RUN apt-get update && apt-get install -y --no-install-recommends \
         nginx \
