@@ -28,9 +28,8 @@ class ProjectController extends Controller
     {
         abort_unless($project->is_published, 404);
 
-        $project->load('pages');
-
-        $page = $project->pages->first();
+        $page = $project->pages()->first();
+        $project->loadNavigationPages();
 
         return view('projects.show', compact('project', 'page'));
     }

@@ -12,7 +12,7 @@ class DocumentationPageController extends Controller
     {
         abort_unless($page->project_id === $project->id && $project->is_published, 404);
 
-        $project->load('pages');
+        $project->loadNavigationPages();
 
         return view('projects.show', compact('project', 'page'));
     }

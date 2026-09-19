@@ -71,7 +71,7 @@
 
                     <div class="flex-1 px-5 py-5 lg:px-8 lg:py-6">
                         <div class="doc-content max-w-none xl:max-w-3xl">
-                            {!! Str::markdown($page->content) !!}
+                            {!! $page->renderedContent() !!}
                         </div>
                     </div>
                 @endif

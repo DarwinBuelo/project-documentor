@@ -10,7 +10,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [ProjectController::class, 'index'])->name('projects.index');
 Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
-Route::get('/projects/{project}/pages/{page}', [DocumentationPageController::class, 'show'])->name('pages.show');
+Route::get('/projects/{project}/pages/{page}', [DocumentationPageController::class, 'show'])
+    ->name('pages.show')
+    ->scopeBindings();
 
 Route::middleware('guest')->group(function () {
     Route::get('/admin/login', [LoginController::class, 'create'])->name('login');

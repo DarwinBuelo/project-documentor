@@ -30,4 +30,14 @@ class Project extends Model
     {
         return $this->hasMany(DocumentationPage::class)->orderBy('sort_order');
     }
+
+    public function loadNavigationPages(): void
+    {
+        $this->setRelation(
+            'pages',
+            $this->pages()
+                ->select('id', 'project_id', 'title', 'slug', 'sort_order')
+                ->get(),
+        );
+    }
 }
