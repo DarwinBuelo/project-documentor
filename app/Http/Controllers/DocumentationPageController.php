@@ -10,7 +10,7 @@ class DocumentationPageController extends Controller
 {
     public function show(Project $project, DocumentationPage $page): View
     {
-        abort_unless($page->project_id === $project->id, 404);
+        abort_unless($page->project_id === $project->id && $project->is_published, 404);
 
         $project->load('pages');
 

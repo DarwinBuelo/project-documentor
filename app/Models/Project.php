@@ -11,7 +11,15 @@ class Project extends Model
         'name',
         'slug',
         'description',
+        'is_published',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_published' => 'boolean',
+        ];
+    }
 
     public function getRouteKeyName(): string
     {

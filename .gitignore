@@ -3,3 +3,4 @@
 /vendor/
 laravel
 /.idea
+.env.before_lerd

@@ -10,6 +10,7 @@ class ProjectController extends Controller
     public function index(): View
     {
         $projects = Project::query()
+            ->where('is_published', true)
             ->withCount('pages')
             ->orderBy('name')
             ->get();
@@ -19,6 +20,8 @@ class ProjectController extends Controller
 
     public function show(Project $project): View
     {
+        abort_unless($project->is_published, 404);
+
         $project->load('pages');
 
         $page = $project->pages->first();

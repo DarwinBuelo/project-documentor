@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', config('app.name'))</title>
+    <title>@yield('title', 'Admin — '.config('app.name'))</title>
     <script>
         (function () {
             const theme = localStorage.getItem('theme') ?? 'dark';
@@ -18,11 +18,11 @@
     <div class="flex min-h-screen flex-col">
         <header class="sticky top-0 z-50 border-b border-border backdrop-blur-md" style="background: var(--app-header);">
             <div class="flex w-full items-center justify-between gap-4 px-5 py-3 lg:px-8">
-                <a href="{{ route('projects.index') }}" class="flex items-center gap-2.5 transition hover:opacity-90">
+                <a href="{{ route('admin.projects.index') }}" class="flex items-center gap-2.5 transition hover:opacity-90">
                     <span class="brand-mark">PD</span>
                     <div>
                         <p class="text-sm font-semibold tracking-tight text-foreground">{{ config('app.name', 'Project Documentor') }}</p>
-                        <p class="hidden text-[11px] text-muted sm:block">Documentation hub</p>
+                        <p class="hidden text-[11px] text-muted sm:block">Administration</p>
                     </div>
                 </a>
 
@@ -37,57 +37,25 @@
                         <span data-theme-label class="hidden sm:inline">Light mode</span>
                     </button>
 
-                    <a
-                        href="{{ route('projects.index') }}"
-                        @class([
-                            'nav-link',
-                            'nav-link-active' => request()->routeIs('projects.*') || request()->routeIs('pages.*'),
-                        ])
-                    >
-                        Projects
+                    <a href="{{ route('projects.index') }}" class="nav-link">
+                        View site
                     </a>
 
-                    @auth
-                        <a
-                            href="{{ route('admin.projects.index') }}"
-                            @class([
-                                'nav-link',
-                                'nav-link-active' => request()->routeIs('admin.*'),
-                            ])
-                        >
-                            Admin
-                        </a>
-                    @else
-                        <a
-                            href="{{ route('login') }}"
-                            @class([
-                                'nav-link',
-                                'nav-link-active' => request()->routeIs('login'),
-                            ])
-                        >
-                            Admin
-                        </a>
-                    @endauth
+                    <form method="POST" action="{{ route('admin.logout') }}">
+                        @csrf
+                        <button type="submit" class="nav-link">
+                            Sign out
+                        </button>
+                    </form>
                 </div>
             </div>
         </header>
-
-        @hasSection('hero')
-            @yield('hero')
-        @endif
 
         <main class="w-full flex-1 py-6 lg:py-8">
             <div class="page-container">
                 @yield('content')
             </div>
         </main>
-
-        <footer class="mt-auto border-t border-border bg-surface">
-            <div class="page-container flex items-center justify-between py-4 text-xs text-muted">
-                <p>&copy; {{ date('Y') }} {{ config('app.name', 'Project Documentor') }}</p>
-                <p class="hidden sm:block">Built for clear, maintainable project docs.</p>
-            </div>
-        </footer>
     </div>
 </body>
 </html>

@@ -1,0 +1,14 @@
+FROM php:8.2-alpine AS webapp
+
+USER root
+
+RUN apk add git php mysql redis supervisor
+RUN mkdir /var/log/supervisor/
+WORKDIR /home/root
+
+COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY test.php /home/root
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+
+#docker build . -t php:name -f Dockerfile
